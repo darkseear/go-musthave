@@ -1,0 +1,45 @@
+package config
+
+import (
+	"flag"
+	"os"
+)
+
+type Config struct {
+	Address   string
+	URL       string
+	LogLevel  string
+	Database  string
+	SecretKey string
+}
+
+func New() *Config {
+	var config Config
+
+	flag.StringVar(&config.Address, "a", "localhost:8080", "server url")
+	flag.StringVar(&config.URL, "b", "http://localhost:8080", "last url")
+	flag.StringVar(&config.LogLevel, "l", "info", "log level")
+	// flag.StringVar(&config.Database, "d", "host=localhost user=postgres password=1234567890 dbname=shorten sslmode=disable", "Database")
+	flag.StringVar(&config.Database, "d", "", "Database")
+	flag.StringVar(&config.SecretKey, "s", "secretkey", "Key for JWT")
+
+	flag.Parse()
+
+	if val, state := os.LookupEnv("SERVER_ADDRESS"); state {
+		config.Address = val
+	}
+	if val, state := os.LookupEnv("BASE_URL"); state {
+		config.URL = val
+	}
+	if val, state := os.LookupEnv("LOG_LEVEL"); state {
+		config.LogLevel = val
+	}
+	if val, state := os.LookupEnv("DATABASE"); state {
+		config.Database = val
+	}
+	if val, state := os.LookupEnv("SECRET_KEY"); state {
+		config.SecretKey = val
+	}
+
+	return &config
+}
