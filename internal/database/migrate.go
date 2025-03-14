@@ -11,6 +11,7 @@ import (
 	logger "github.com/darkseear/go-musthave/internal/logging"
 )
 
+//go:embed migrations/*
 var migrations embed.FS
 
 func RunMigrations(db *sql.DB) error {
