@@ -1,17 +1,18 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	// "github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 
 	"github.com/darkseear/go-musthave/internal/config"
 	"github.com/darkseear/go-musthave/internal/database"
+	"github.com/darkseear/go-musthave/internal/handlers"
 	logger "github.com/darkseear/go-musthave/internal/logging"
-	"github.com/darkseear/go-musthave/internal/middleware"
+	"github.com/darkseear/go-musthave/internal/repository"
 	"github.com/darkseear/go-musthave/internal/service"
 )
 
@@ -45,14 +46,10 @@ func run() error {
 	}
 
 	auth := service.NewAuth(config.SecretKey)
-	//создать роутер
-	r := chi.NewRouter()
-	// r.Use(middleware.Recoverer)
-
-	// r.Group(func(r chi.Router){
-	// 	r.Post("/api/users/register", )//решистрация пользователя
-	// })
+	ctx := context.Background()
+	store := repository.NewLoyalty(db, ctx)
+	r := handlers.Routers(config, store, auth)
 
 	logger.Log.Info("Running server", zap.String("address", config.Address))
-	return http.ListenAndServe(config.Address, middleware.AuthMiddleware(r, auth))
+	return http.ListenAndServe(config.Address, r.router)
 }
