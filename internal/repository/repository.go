@@ -8,5 +8,5 @@ import (
 
 type LoyaltyRepository interface {
 	GreaterUser(ctx context.Context, user models.UserInput) (*models.User, error)
-	// GetUserByLogin(ctx context.Context, login string) (*models.User, error)
+	GetUserByLogin(ctx context.Context, login string) (*models.User, error)
 }

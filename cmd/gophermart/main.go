@@ -51,5 +51,5 @@ func run() error {
 	r := handlers.Routers(config, store, auth)
 
 	logger.Log.Info("Running server", zap.String("address", config.Address))
-	return http.ListenAndServe(config.Address, r.router)
+	return http.ListenAndServe(config.Address, r.Router)
 }

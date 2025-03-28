@@ -1,26 +1,45 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 
 	logger "github.com/darkseear/go-musthave/internal/logging"
+	"github.com/darkseear/go-musthave/internal/models"
 	"github.com/darkseear/go-musthave/internal/service"
 	"go.uber.org/zap"
 )
 
 type UsersHandler struct {
 	userService *service.User
+	auth        *service.Auth
 }
 
-func NewUsersHandler(userService *service.User) *UsersHandler {
-	return &UsersHandler{userService: userService}
+func NewUsersHandler(userService *service.User, auth *service.Auth) *UsersHandler {
+	return &UsersHandler{userService: userService, auth: auth}
 }
 
 func (uh *UsersHandler) UserRegistration(w http.ResponseWriter, r *http.Request) {
-	user, err := uh.userService.UserRegistration(r.Context(), r.FormValue("login"), r.FormValue("password"))
+
+	var userInput models.UserInput
+	if err := json.NewDecoder(r.Body).Decode(&userInput); err != nil {
+		logger.Log.Error("Failed to decode request body", zap.Error(err))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	user, err := uh.userService.UserRegistration(r.Context(), userInput.Login, userInput.Password)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	logger.Log.Info("User registered", zap.Int("userID", user.ID))
+
+	token, err := uh.auth.GenerateToken(user.ID)
+	if err != nil {
+		logger.Log.Error("Failed to generate token", zap.Error(err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Authorization", token)
+	logger.Log.Info("User registered and auth", zap.Int("userID", user.ID))
+	w.WriteHeader(http.StatusOK)
 }

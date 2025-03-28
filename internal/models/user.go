@@ -10,6 +10,6 @@ type User struct {
 }
 
 type UserInput struct {
-	Login    string `json:"login" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Login    string `json:"login"`
+	Password string `json:"password"`
 }
