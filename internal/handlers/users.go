@@ -43,3 +43,27 @@ func (uh *UsersHandler) UserRegistration(w http.ResponseWriter, r *http.Request)
 	logger.Log.Info("User registered and auth", zap.Int("userID", user.ID))
 	w.WriteHeader(http.StatusOK)
 }
+
+func (uh *UsersHandler) UserLogin(w http.ResponseWriter, r *http.Request) {
+	var userInput models.UserInput
+	if err := json.NewDecoder(r.Body).Decode(&userInput); err != nil {
+		logger.Log.Error("Failed to decode request body", zap.Error(err))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	user, err := uh.userService.UserLogin(r.Context(), userInput.Login, userInput.Password)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	token, err := uh.auth.GenerateToken(user.ID)
+	if err != nil {
+		logger.Log.Error("Failed to generate token", zap.Error(err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Authorization", token)
+	logger.Log.Info("User logged in and auth", zap.Int("userID", user.ID))
+	w.WriteHeader(http.StatusOK)
+}

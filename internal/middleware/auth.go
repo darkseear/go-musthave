@@ -7,7 +7,7 @@ import (
 	"github.com/darkseear/go-musthave/internal/service"
 )
 
-func AuthMiddleware(next http.Handler, a *service.Auth) http.Handler {
+func AuthMiddleware(next http.HandlerFunc, a *service.Auth) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
 		if token == "" {
@@ -21,6 +21,6 @@ func AuthMiddleware(next http.Handler, a *service.Auth) http.Handler {
 		}
 		ctx := context.WithValue(r.Context(), "userID", userID)
 		r = r.WithContext(ctx)
-		next.ServeHTTP(w, r)
+		// next.ServeHTTP(w, r)
 	})
 }

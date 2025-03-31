@@ -19,39 +19,45 @@ func NewLoyalty(db *sql.DB, ctx context.Context) *Loyalty {
 }
 
 func (l *Loyalty) GreaterUser(ctx context.Context, user models.UserInput) (*models.User, error) {
-	// Implement the logic to interact with the database and return a user
 	query := `INSERT INTO users (login, password_hash) VALUES ($1, $2) RETURNING id, 
 	login, password_hash, created_at`
-
 	userUser := &models.User{}
-	err := l.db.QueryRowContext(ctx, query, user.Login, user.Password).Scan(
-		&userUser.ID,
-		&userUser.Login,
-		&userUser.PasswordHash,
-		&userUser.CreatedAt,
-	)
+	userDB, err := l.UserDB(ctx, userUser, query, user.Login, user.Password)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			logger.Log.Error("No rows found", zap.Error(err))
-			return nil, err
-		}
-		logger.Log.Error("Failed to execute query", zap.Error(err))
+		logger.Log.Error("Failed to insert user", zap.Error(err))
 		return nil, err
 	}
-
-	logger.Log.Info("User created successfully", zap.String("login", userUser.Login))
-	return userUser, nil
+	return userDB, nil
 }
 
 func (l *Loyalty) GetUserByLogin(ctx context.Context, login string) (*models.User, error) {
 	query := `SELECT id, login, password_hash, created_at FROM users WHERE login = $1`
 	user := &models.User{}
-	err := l.db.QueryRowContext(ctx, query, login).Scan(
-		&user.ID,
-		&user.Login,
-		&user.PasswordHash,
-		&user.CreatedAt,
-	)
+	UserDB, err := l.UserDB(ctx, user, query, login, "")
+	if err != nil {
+		logger.Log.Error("Failed to get user by login", zap.Error(err))
+		return nil, err
+	}
+	return UserDB, nil
+}
+
+func (l *Loyalty) UserDB(ctx context.Context, user *models.User, query, login, password string) (*models.User, error) {
+	var err error
+	if password == "" {
+		err = l.db.QueryRowContext(ctx, query, login).Scan(
+			&user.ID,
+			&user.Login,
+			&user.PasswordHash,
+			&user.CreatedAt,
+		)
+	} else {
+		err = l.db.QueryRowContext(ctx, query, login, password).Scan(
+			&user.ID,
+			&user.Login,
+			&user.PasswordHash,
+			&user.CreatedAt,
+		)
+	}
 	if err != nil {
 		if err == sql.ErrNoRows {
 			logger.Log.Error("No rows found", zap.Error(err))

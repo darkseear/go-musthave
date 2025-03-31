@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	logger "github.com/darkseear/go-musthave/internal/logging"
 	"github.com/darkseear/go-musthave/internal/models"
@@ -24,6 +25,18 @@ func (u *User) UserRegistration(ctx context.Context, login, password string) (*m
 	if err != nil {
 		logger.Log.Error("Failed to get user by login")
 		return nil, err
+	}
+	return user, nil
+}
+
+func (u *User) UserLogin(ctx context.Context, login, password string) (*models.User, error) {
+	user, err := u.store.GetUserByLogin(ctx, login)
+	if err != nil {
+		logger.Log.Error("Failed to get user by login")
+		return nil, err
+	}
+	if user.PasswordHash != utils.HashPassword(password) {
+		return nil, errors.New("invalid password")
 	}
 	return user, nil
 }

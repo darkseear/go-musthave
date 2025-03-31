@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"github.com/darkseear/go-musthave/internal/config"
-	"github.com/darkseear/go-musthave/internal/middleware"
 	"github.com/darkseear/go-musthave/internal/repository"
 	"github.com/darkseear/go-musthave/internal/service"
 	"github.com/go-chi/chi/v5"
@@ -24,10 +23,11 @@ func Routers(cfg *config.Config, store *repository.Loyalty, auth *service.Auth) 
 	userService := service.NewUser(store)
 	userHandler := NewUsersHandler(userService, auth)
 
+	r.Router.Post("/api/users/register", userHandler.UserRegistration) //регистрация пользователя
+	r.Router.Post("/api/users/login", userHandler.UserLogin)
 	r.Router.Group(func(r chi.Router) {
-		middleware.AuthMiddleware(r, auth)                          //middleware для авторизации
-		r.Post("/api/users/register", userHandler.UserRegistration) //регистрация пользователя
-		r.Post("/api/users/login", userHandler.UserRegistration)    //аутентификация пользователя
+		// middleware.AuthMiddleware(r, auth)                          //middleware для авторизации
+		//аутентификация пользователя
 	})
 
 	return &r
