@@ -70,3 +70,114 @@ func (l *Loyalty) UserDB(ctx context.Context, user *models.User, query, login, p
 	logger.Log.Info("User retrieved successfully", zap.String("login", user.Login))
 	return user, nil
 }
+
+func (l *Loyalty) UploadOrder(ctx context.Context, order models.Order) error {
+	query := `INSERT INTO orders (number, user_id, status, accrual) VALUES ($1, $2, $3, $4)`
+	_, err := l.db.ExecContext(ctx, query, order.Number, order.UserID, order.Status, order.Accrual)
+	if err != nil {
+		logger.Log.Error("Failed to insert order", zap.Error(err))
+		return err
+	}
+
+	logger.Log.Info("Order uploaded successfully", zap.Int("orderNumber", order.Number))
+	return nil
+}
+
+func (l *Loyalty) GetOrders(ctx context.Context, userID int) ([]models.Order, error) {
+	query := `SELECT number, user_id, status, accrual FROM orders WHERE user_id = $1`
+	rows, err := l.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		logger.Log.Error("Failed to execute query", zap.Error(err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []models.Order
+	for rows.Next() {
+		order := models.Order{}
+		err := rows.Scan(&order.Number, &order.UserID, &order.Status, &order.Accrual)
+		if err != nil {
+			logger.Log.Error("Failed to scan row", zap.Error(err))
+			return nil, err
+		}
+		orders = append(orders, order)
+	}
+
+	if err := rows.Err(); err != nil {
+		logger.Log.Error("Error occurred during row iteration", zap.Error(err))
+		return nil, err
+	}
+
+	logger.Log.Info("Orders retrieved successfully", zap.Int("userID", userID))
+	return orders, nil
+}
+
+func (l *Loyalty) GetBalance(ctx context.Context, userID int) (*models.Balance, error) {
+	query := `SELECT current_balance, withdrawn_balance FROM user WHERE user_id = $1`
+	balance := &models.Balance{}
+	err := l.db.QueryRowContext(ctx, query, userID).Scan(&balance.Current, &balance.Withdrawn)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			logger.Log.Error("No rows found", zap.Error(err))
+			return nil, err
+		}
+		logger.Log.Error("Failed to execute query", zap.Error(err))
+		return nil, err
+	}
+
+	logger.Log.Info("Balance retrieved successfully", zap.Int("userID", userID))
+	return balance, nil
+}
+
+func (l *Loyalty) UpdateBalance(ctx context.Context, userID int, delta float64) error {
+	query := `UPDATE user SET current_balance = current_balance + $1 WHERE user_id = $2`
+	_, err := l.db.ExecContext(ctx, query, delta, userID)
+	if err != nil {
+		logger.Log.Error("Failed to update balance", zap.Error(err))
+		return err
+	}
+
+	logger.Log.Info("Balance updated successfully", zap.Int("userID", userID), zap.Float64("delta", delta))
+	return nil
+}
+
+func (l *Loyalty) CreateWithdrawal(ctx context.Context, userID int, orderNumber int, sum float64) error {
+	query := `INSERT INTO withdrawals (user_id, order_number, sum) VALUES ($1, $2, $3)`
+	_, err := l.db.ExecContext(ctx, query, userID, orderNumber, sum)
+	if err != nil {
+		logger.Log.Error("Failed to create withdrawal", zap.Error(err))
+		return err
+	}
+
+	logger.Log.Info("Withdrawal created successfully", zap.Int("userID", userID), zap.Int("orderNumber", orderNumber), zap.Float64("sum", sum))
+	return nil
+}
+
+func (l *Loyalty) GetWithdrawals(ctx context.Context, userID int) ([]models.Withdrawal, error) {
+	query := `SELECT order_number, sum FROM withdrawals WHERE user_id = $1`
+	rows, err := l.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		logger.Log.Error("Failed to execute query", zap.Error(err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	var withdrawals []models.Withdrawal
+	for rows.Next() {
+		withdrawal := models.Withdrawal{}
+		err := rows.Scan(&withdrawal.OrderNumber, &withdrawal.ProcessedAt, &withdrawal.Sum, &withdrawal.UserID)
+		if err != nil {
+			logger.Log.Error("Failed to scan row", zap.Error(err))
+			return nil, err
+		}
+		withdrawals = append(withdrawals, withdrawal)
+	}
+
+	if err := rows.Err(); err != nil {
+		logger.Log.Error("Error occurred during row iteration", zap.Error(err))
+		return nil, err
+	}
+
+	logger.Log.Info("Withdrawals retrieved successfully", zap.Int("userID", userID))
+	return withdrawals, nil
+}

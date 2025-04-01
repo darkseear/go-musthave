@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/darkseear/go-musthave/internal/config"
+	"github.com/darkseear/go-musthave/internal/middleware"
 	"github.com/darkseear/go-musthave/internal/repository"
 	"github.com/darkseear/go-musthave/internal/service"
 	"github.com/go-chi/chi/v5"
@@ -22,12 +23,22 @@ func Routers(cfg *config.Config, store *repository.Loyalty, auth *service.Auth) 
 
 	userService := service.NewUser(store)
 	userHandler := NewUsersHandler(userService, auth)
+	orderService := service.NewOrder(store)
+	orderHandler := NewOrderHandler(orderService)
+	balanceService := service.NewBalance(store)
+	balanceHandler := NewBalanceHandler(balanceService)
 
-	r.Router.Post("/api/users/register", userHandler.UserRegistration) //регистрация пользователя
-	r.Router.Post("/api/users/login", userHandler.UserLogin)
+	r.Router.Post("/api/user/register", userHandler.UserRegistration) //регистрация пользователя
+	r.Router.Post("/api/user/login", userHandler.UserLogin)           //аутентификация пользователя
+
 	r.Router.Group(func(r chi.Router) {
-		// middleware.AuthMiddleware(r, auth)                          //middleware для авторизации
-		//аутентификация пользователя
+		r.Use(middleware.AuthMiddleware(auth)) //middleware для аутентификации пользователя
+		r.Post("/api/user/orders", orderHandler.UserUploadsOrder)
+		r.Get("/api/user/orders", orderHandler.UserGetOrder)
+
+		r.Get("/api/user/balance", balanceHandler.UserGetBalance)
+		r.Post("/api/user/balance/withdraw", balanceHandler.UserWithdrawBalance)
+		r.Get("/api/user/withdrawals", balanceHandler.UserGetWithdrawals)
 	})
 
 	return &r
