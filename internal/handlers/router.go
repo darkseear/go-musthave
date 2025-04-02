@@ -33,8 +33,8 @@ func Routers(cfg *config.Config, store *repository.Loyalty, auth *service.Auth) 
 
 	r.Router.Group(func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware(auth)) //middleware для аутентификации пользователя
-		r.Post("/api/user/orders", orderHandler.UserUploadsOrder)
-		r.Get("/api/user/orders", orderHandler.UserGetOrder)
+		r.Post("/api/user/orders", orderHandler.UploadOrder)
+		r.Get("/api/user/orders", orderHandler.GetOrders)
 
 		r.Get("/api/user/balance", balanceHandler.UserGetBalance)
 		r.Post("/api/user/balance/withdraw", balanceHandler.UserWithdrawBalance)

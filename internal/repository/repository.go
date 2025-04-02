@@ -18,4 +18,7 @@ type LoyaltyRepository interface {
 
 	CreateWithdrawal(ctx context.Context, userID int, orderNumber int, sum float64) error
 	GetWithdrawals(ctx context.Context, userID int) ([]models.Withdrawal, error)
+
+	Ping(ctx context.Context) error
+	Close() error
 }

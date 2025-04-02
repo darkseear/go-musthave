@@ -12,7 +12,7 @@ const (
 )
 
 type Order struct {
-	Number     int       `json:"number" db:"number"`
+	Number     string    `json:"number" db:"number"`
 	UserID     int       `json:"-" db:"user_id"`
 	Status     Status    `json:"status" db:"status"`
 	Accrual    float64   `json:"accrual,omitempty" db:"accrual"`
