@@ -12,6 +12,8 @@ type LoyaltyRepository interface {
 
 	UploadOrder(ctx context.Context, order models.Order) error
 	GetOrders(ctx context.Context, userID int) ([]models.Order, error)
+	UpdateOrderStatus(ctx context.Context, orderNumber string, status models.Status, accrual float64) error
+	GetOrder(ctx context.Context, orderNumber string) (*models.Order, error)
 
 	GetBalance(ctx context.Context, userID int) (*models.Balance, error)
 	UpdateBalance(ctx context.Context, userID int, delta float64) error

@@ -99,7 +99,7 @@ func (l *Loyalty) UploadOrder(ctx context.Context, order models.Order) error {
 	return nil
 }
 
-func (l *Loyalty) GetOrder(ctx context.Context, orderNumber int) (*models.Order, error) {
+func (l *Loyalty) GetOrder(ctx context.Context, orderNumber string) (*models.Order, error) {
 	query := `SELECT number, user_id, status, accrual, uploaded_at 
 	FROM orders 
 	WHERE number = $1`

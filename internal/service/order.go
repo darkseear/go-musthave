@@ -6,13 +6,15 @@ import (
 
 	logger "github.com/darkseear/go-musthave/internal/logging"
 	"github.com/darkseear/go-musthave/internal/models"
+	"github.com/darkseear/go-musthave/internal/processor"
 	"github.com/darkseear/go-musthave/internal/repository"
 	"github.com/darkseear/go-musthave/internal/utils"
 	"go.uber.org/zap"
 )
 
 type Order struct {
-	store repository.LoyaltyRepository
+	store          repository.LoyaltyRepository
+	orderProcessor *processor.Order
 }
 
 func NewOrder(store repository.LoyaltyRepository) *Order {
@@ -28,6 +30,7 @@ func (o *Order) UserUploadsOrder(ctx context.Context, order models.Order) error 
 	if err != nil {
 		return err
 	}
+	o.orderProcessor.AddOrder(ctx, order.Number)
 	return nil
 }
 

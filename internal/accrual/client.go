@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/darkseear/go-musthave/internal/models"
 )
@@ -14,15 +15,25 @@ type Client struct {
 	httpClient *http.Client
 }
 
-func NewClient(baseURL string, httpClient *http.Client) *Client {
+type RateLimitError struct {
+	RetryAfter time.Duration
+}
+
+func NewClient(baseURL string) *Client {
 	return &Client{
-		baseURL:    baseURL,
-		httpClient: httpClient,
+		baseURL: baseURL,
+		httpClient: &http.Client{
+			Timeout: 10 * time.Second,
+		},
 	}
 }
 
-func (c *Client) GetAccrual(orderNumber int) (*models.Accrual, error) {
-	url := fmt.Sprintf("%s/api/v1/accrual/%d", c.baseURL, orderNumber)
+func (e *RateLimitError) Error() string {
+	return fmt.Sprintf("rate limit exceeded, retry after %v", e.RetryAfter)
+}
+
+func (c *Client) GetAccrual(orderNumber string) (*models.Accrual, error) {
+	url := fmt.Sprintf("%s/api/v1/accrual/%s", c.baseURL, orderNumber)
 	req, err := c.httpClient.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)

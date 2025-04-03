@@ -8,10 +8,12 @@ import (
 	// "github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 
+	"github.com/darkseear/go-musthave/internal/accrual"
 	"github.com/darkseear/go-musthave/internal/config"
 	"github.com/darkseear/go-musthave/internal/database"
 	"github.com/darkseear/go-musthave/internal/handlers"
 	logger "github.com/darkseear/go-musthave/internal/logging"
+	"github.com/darkseear/go-musthave/internal/processor"
 	"github.com/darkseear/go-musthave/internal/repository"
 	"github.com/darkseear/go-musthave/internal/service"
 )
@@ -49,6 +51,11 @@ func run() error {
 	ctx := context.Background()
 	store := repository.NewLoyalty(db, ctx)
 	r := handlers.Routers(config, store, auth)
+
+	//acсrual
+	accrualClient := accrual.NewClient(config.AccrualSystemAddress)
+	orderProcessor := processor.NewOrder(accrualClient, store)
+	go orderProcessor.Start(ctx)
 
 	logger.Log.Info("Running server", zap.String("address", config.Address))
 	return http.ListenAndServe(config.Address, r.Router)
