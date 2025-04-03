@@ -37,6 +37,7 @@ func (h *OrderHandler) UploadOrder(w http.ResponseWriter, r *http.Request) {
 		logger.Log.Error("error upload")
 		return
 	}
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func (h *OrderHandler) GetOrders(w http.ResponseWriter, r *http.Request) {
@@ -54,4 +55,5 @@ func (h *OrderHandler) GetOrders(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(orders); err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 	}
+	w.WriteHeader(http.StatusOK)
 }
