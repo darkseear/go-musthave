@@ -9,6 +9,9 @@ import (
 
 func AuthMiddleware(a *service.Auth) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
+		type contextKey string
+		const userIDKey contextKey = "userID"
+
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token := r.Header.Get("Authorization")
 			if token == "" {
@@ -20,7 +23,7 @@ func AuthMiddleware(a *service.Auth) func(http.Handler) http.Handler {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
-			ctx := context.WithValue(r.Context(), "userID", userID)
+			ctx := context.WithValue(r.Context(), userIDKey, userID)
 			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
 		})

@@ -21,8 +21,8 @@ func NewOrder(store repository.LoyaltyRepository) *Order {
 
 func (o *Order) UserUploadsOrder(ctx context.Context, order models.Order) error {
 	if !utils.ValidLuhn(order.Number) {
-		logger.Log.Info("Invalid format Luhn", zap.String("orderNumber", order.Number))
-		return errors.New("Invalid order")
+		logger.Log.Info("Invalid format Luhn", zap.String("order_number", order.Number))
+		return errors.New("invalid order")
 	}
 	err := o.store.UploadOrder(ctx, order)
 	if err != nil {
