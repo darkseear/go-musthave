@@ -2,25 +2,36 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
+	"github.com/darkseear/go-musthave/internal/config"
 	logger "github.com/darkseear/go-musthave/internal/logging"
+	"github.com/darkseear/go-musthave/internal/middleware"
 	"github.com/darkseear/go-musthave/internal/models"
 	"github.com/darkseear/go-musthave/internal/service"
 )
 
 type OrderHandler struct {
 	orderServices *service.Order
+	cfg           *config.Config
 }
 
-func NewOrderHandler(orderServices *service.Order) *OrderHandler {
-	return &OrderHandler{orderServices: orderServices}
+func NewOrderHandler(orderServices *service.Order, cfg *config.Config) *OrderHandler {
+	return &OrderHandler{orderServices: orderServices, cfg: cfg}
 }
 
 func (h *OrderHandler) UploadOrder(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("userID").(int)
+	authCode := r.Header.Get("Authorization")
+	if authCode == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	fmt.Println(authCode)
+	userID := middleware.GetUserID(r.Header.Get("Authorization"), h.cfg.SecretKey)
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -35,6 +46,7 @@ func (h *OrderHandler) UploadOrder(w http.ResponseWriter, r *http.Request) {
 	err = h.orderServices.UserUploadsOrder(r.Context(), models.Order{Number: orderNumber, UserID: userID, Status: models.Registered})
 	if err != nil {
 		logger.Log.Error("error upload")
+		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 	w.WriteHeader(http.StatusAccepted)

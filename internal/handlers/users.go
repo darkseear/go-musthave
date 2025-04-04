@@ -29,6 +29,18 @@ func (uh *UsersHandler) UserRegistration(w http.ResponseWriter, r *http.Request)
 	}
 	user, err := uh.userService.UserRegistration(r.Context(), userInput.Login, userInput.Password)
 	if err != nil {
+		if err.Error() == "user already exists" {
+			logger.Log.Error("User already exists", zap.Error(err))
+			http.Error(w, err.Error(), http.StatusConflict)
+			return
+		} else if err.Error() == "invalid password" {
+			logger.Log.Error("Invalid password", zap.Error(err))
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		} else {
+			logger.Log.Error("Failed to register user", zap.Error(err))
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

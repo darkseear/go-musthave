@@ -24,7 +24,7 @@ func Routers(cfg *config.Config, store *repository.Loyalty, auth *service.Auth) 
 	userService := service.NewUser(store)
 	userHandler := NewUsersHandler(userService, auth)
 	orderService := service.NewOrder(store)
-	orderHandler := NewOrderHandler(orderService)
+	orderHandler := NewOrderHandler(orderService, r.cfg)
 	balanceService := service.NewBalance(store)
 	balanceHandler := NewBalanceHandler(balanceService)
 

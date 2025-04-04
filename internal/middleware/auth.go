@@ -29,3 +29,12 @@ func AuthMiddleware(a *service.Auth) func(http.Handler) http.Handler {
 		})
 	}
 }
+
+func GetUserID(token string, secret string) int {
+	a := service.NewAuth(secret)
+	userID, err := a.ValidateToken(token)
+	if err != nil {
+		return 0
+	}
+	return userID
+}

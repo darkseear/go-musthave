@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	logger "github.com/darkseear/go-musthave/internal/logging"
 	"github.com/darkseear/go-musthave/internal/models"
@@ -23,12 +24,23 @@ func (l *Loyalty) GreaterUser(ctx context.Context, user models.UserInput) (*mode
 	query := `INSERT INTO users (login, password_hash) VALUES ($1, $2) RETURNING id, 
 	login, password_hash, created_at`
 	userUser := &models.User{}
-	userDB, err := l.UserDB(ctx, userUser, query, user.Login, user.Password)
+	err := l.db.QueryRowContext(ctx, query, user.Login, user.Password).Scan(
+		&userUser.ID,
+		&userUser.Login,
+		&userUser.PasswordHash,
+		&userUser.CreatedAt,
+	)
 	if err != nil {
-		logger.Log.Error("Failed to insert user", zap.Error(err))
+		if strings.Contains(err.Error(), "users_login_key") {
+			logger.Log.Error("user already exists", zap.Error(err))
+			return nil, errors.New("user already exists")
+		}
+		logger.Log.Error("Failed to execute query", zap.Error(err))
 		return nil, err
 	}
-	return userDB, nil
+
+	logger.Log.Info("User retrieved successfully", zap.String("login", user.Login))
+	return userUser, nil
 }
 
 func (l *Loyalty) GetUserByLogin(ctx context.Context, login string) (*models.User, error) {
@@ -36,31 +48,12 @@ func (l *Loyalty) GetUserByLogin(ctx context.Context, login string) (*models.Use
 	FROM users 
 	WHERE login = $1`
 	user := &models.User{}
-	UserDB, err := l.UserDB(ctx, user, query, login, "")
-	if err != nil {
-		logger.Log.Error("Failed to get user by login", zap.Error(err))
-		return nil, err
-	}
-	return UserDB, nil
-}
-
-func (l *Loyalty) UserDB(ctx context.Context, user *models.User, query, login, password string) (*models.User, error) {
-	var err error
-	if password == "" {
-		err = l.db.QueryRowContext(ctx, query, login).Scan(
-			&user.ID,
-			&user.Login,
-			&user.PasswordHash,
-			&user.CreatedAt,
-		)
-	} else {
-		err = l.db.QueryRowContext(ctx, query, login, password).Scan(
-			&user.ID,
-			&user.Login,
-			&user.PasswordHash,
-			&user.CreatedAt,
-		)
-	}
+	err := l.db.QueryRowContext(ctx, query, login).Scan(
+		&user.ID,
+		&user.Login,
+		&user.PasswordHash,
+		&user.CreatedAt,
+	)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			logger.Log.Error("No rows found", zap.Error(err))

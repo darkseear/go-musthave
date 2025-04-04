@@ -20,10 +20,12 @@ func NewUser(store repository.LoyaltyRepository) *User {
 
 func (u *User) UserRegistration(ctx context.Context, login, password string) (*models.User, error) {
 	passwordHash := utils.HashPassword(password)
-	logger.Log.Info("get passwordHash")
 	user, err := u.store.GreaterUser(ctx, models.UserInput{Login: login, Password: passwordHash})
 	if err != nil {
-		logger.Log.Error("Failed to get user by login")
+		if err.Error() == "user already exists" {
+			logger.Log.Error("User already exists")
+			return nil, errors.New("user already exists")
+		}
 		return nil, err
 	}
 	return user, nil
