@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	logger "github.com/darkseear/go-musthave/internal/logging"
 	"github.com/darkseear/go-musthave/internal/models"
@@ -18,11 +19,12 @@ type Order struct {
 }
 
 func NewOrder(store repository.LoyaltyRepository) *Order {
-	return &Order{store: store}
+	return &Order{store: store, orderProcessor: processor.NewOrder(nil, store)}
 }
 
 func (o *Order) UserUploadsOrder(ctx context.Context, order models.Order) error {
 	if !utils.ValidLuhn(order.Number) {
+		fmt.Println(utils.ValidLuhn(order.Number))
 		logger.Log.Info("Invalid format Luhn", zap.String("order_number", order.Number))
 		return errors.New("invalid order")
 	}

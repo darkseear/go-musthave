@@ -69,7 +69,8 @@ func (l *Loyalty) GetUserByLogin(ctx context.Context, login string) (*models.Use
 
 func (l *Loyalty) UploadOrder(ctx context.Context, order models.Order) error {
 	var isOrderExists sql.NullInt64
-	err := l.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT user_id FROM orders WHERE number = $1)`, order.Number).Scan(&isOrderExists)
+	query := `SELECT user_id FROM orders WHERE number = $1`
+	err := l.db.QueryRowContext(ctx, query, order.Number).Scan(&isOrderExists)
 	if err != nil && err != sql.ErrNoRows {
 		logger.Log.Error("Failed to check if order exists", zap.Error(err))
 		return err
@@ -81,7 +82,7 @@ func (l *Loyalty) UploadOrder(ctx context.Context, order models.Order) error {
 		return errors.New("order does not exist")
 	}
 
-	query := `INSERT INTO orders (number, user_id, status) VALUES ($1, $2, $3)`
+	query = `INSERT INTO orders (number, user_id, status) VALUES ($1, $2, $3)`
 	_, err = l.db.ExecContext(ctx, query, order.Number, order.UserID, order.Status)
 	if err != nil {
 		logger.Log.Error("Failed to insert order", zap.Error(err))
