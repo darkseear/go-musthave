@@ -26,7 +26,7 @@ func Routers(cfg *config.Config, store *repository.Loyalty, auth *service.Auth) 
 	orderService := service.NewOrder(store)
 	orderHandler := NewOrderHandler(orderService, r.cfg)
 	balanceService := service.NewBalance(store)
-	balanceHandler := NewBalanceHandler(balanceService)
+	balanceHandler := NewBalanceHandler(balanceService, r.cfg)
 
 	r.Router.Post("/api/user/register", userHandler.UserRegistration) //регистрация пользователя
 	r.Router.Post("/api/user/login", userHandler.UserLogin)           //аутентификация пользователя

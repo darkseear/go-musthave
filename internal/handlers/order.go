@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -29,7 +28,6 @@ func (h *OrderHandler) UploadOrder(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	fmt.Println(authCode)
 	userID := middleware.GetUserID(r.Header.Get("Authorization"), h.cfg.SecretKey)
 
 	body, err := io.ReadAll(r.Body)
@@ -53,7 +51,12 @@ func (h *OrderHandler) UploadOrder(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *OrderHandler) GetOrders(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("userID").(int)
+	authCode := r.Header.Get("Authorization")
+	if authCode == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	userID := middleware.GetUserID(r.Header.Get("Authorization"), h.cfg.SecretKey)
 
 	orders, err := h.orderServices.UserGetOrder(r.Context(), userID)
 	if err != nil {
