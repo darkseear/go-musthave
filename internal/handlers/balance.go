@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/darkseear/go-musthave/internal/config"
 	"github.com/darkseear/go-musthave/internal/middleware"
+	"github.com/darkseear/go-musthave/internal/models"
 	"github.com/darkseear/go-musthave/internal/service"
 )
 
@@ -48,13 +48,18 @@ func (b *BalanceHandler) UserWithdrawBalance(w http.ResponseWriter, r *http.Requ
 	}
 	userID := middleware.GetUserID(r.Header.Get("Authorization"), b.cfg.SecretKey)
 
-	err := b.balanceService.UserUpdateBalance(r.Context(), userID, -10.0)
+	var req models.ReqWithdraw
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	err := b.balanceService.UserWithdrawn(r.Context(), userID, req.Order, req.Sum)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status": "success"}`))
 }
 func (b *BalanceHandler) UserGetWithdrawals(w http.ResponseWriter, r *http.Request) {
 	authCode := r.Header.Get("Authorization")
@@ -63,5 +68,15 @@ func (b *BalanceHandler) UserGetWithdrawals(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	userID := middleware.GetUserID(r.Header.Get("Authorization"), b.cfg.SecretKey)
-	fmt.Println(userID)
+
+	withdrawals, err := b.balanceService.UserGetWithdrawals(r.Context(), userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(withdrawals); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }

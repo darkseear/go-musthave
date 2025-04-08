@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"errors"
 
+	"github.com/darkseear/go-musthave/internal/models"
 	"github.com/darkseear/go-musthave/internal/repository"
+	"github.com/darkseear/go-musthave/internal/utils"
 )
 
 type Balance struct {
@@ -22,10 +25,24 @@ func (b *Balance) UserGetBalance(ctx context.Context, userID int) (float64, erro
 	return balance.Current, nil
 }
 
-func (b *Balance) UserUpdateBalance(ctx context.Context, userID int, delta float64) error {
-	return b.store.UpdateBalance(ctx, userID, delta)
+func (b *Balance) UserGetWithdrawals(ctx context.Context, userID int) ([]models.Withdrawal, error) {
+	return b.store.GetWithdrawals(ctx, userID)
 }
 
-func (b *Balance) UserCreateWithdrawal(ctx context.Context, userID int, orderNumber int, sum float64) error {
-	return b.store.CreateWithdrawal(ctx, userID, orderNumber, sum)
+func (b *Balance) UserWithdrawn(ctx context.Context, userID int, orderNumber string, amount float64) error {
+	if !utils.ValidLuhn(orderNumber) {
+		return errors.New("invalid order number")
+	}
+	if amount <= 0 {
+		return errors.New("negative amount")
+	}
+
+	err := b.store.CreateWithdrawal(ctx, userID, orderNumber, amount)
+	if err != nil {
+		if errors.Is(err, errors.New("insufficient funds")) {
+			return errors.New("insufficient funds")
+		}
+		return err
+	}
+	return nil
 }

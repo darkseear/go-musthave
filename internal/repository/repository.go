@@ -18,7 +18,7 @@ type LoyaltyRepository interface {
 	GetBalance(ctx context.Context, userID int) (*models.Balance, error)
 	UpdateBalance(ctx context.Context, userID int, delta float64) error
 
-	CreateWithdrawal(ctx context.Context, userID int, orderNumber int, sum float64) error
+	CreateWithdrawal(ctx context.Context, userID int, orderNumber string, sum float64) error
 	GetWithdrawals(ctx context.Context, userID int) ([]models.Withdrawal, error)
 
 	Ping(ctx context.Context) error
