@@ -42,6 +42,9 @@ func New() *Config {
 	if val, state := os.LookupEnv("SECRET_KEY"); state {
 		config.SecretKey = val
 	}
+	if val, state := os.LookupEnv("ACCRUAL_SYSTEM_ADDRESS"); state {
+		config.AccrualSystemAddress = val
+	}
 
 	return &config
 }

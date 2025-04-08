@@ -117,8 +117,8 @@ func (o *Order) ProcessOrders(ctx context.Context) {
 func (o *Order) AddOrder(ctx context.Context, number string) {
 	select {
 	case o.ordersChan.orders <- number:
-		logger.Log.Info("add order process")
+		logger.Log.Info("order added to processing queue", zap.String("order", number))
 	default:
-		logger.Log.Warn("")
+		logger.Log.Warn("order queue is full, unable to add order", zap.String("order", number))
 	}
 }
