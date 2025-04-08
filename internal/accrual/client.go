@@ -33,7 +33,7 @@ func (e *RateLimitError) Error() string {
 }
 
 func (c *Client) GetAccrual(orderNumber string) (*models.Accrual, error) {
-	url := fmt.Sprintf("%s/api/v1/accrual/%s", c.baseURL, orderNumber)
+	url := fmt.Sprintf("%s/api/orders/%s", c.baseURL, orderNumber)
 	req, err := c.httpClient.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)

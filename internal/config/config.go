@@ -23,7 +23,7 @@ func New() *Config {
 	flag.StringVar(&config.Database, "d", "host=localhost user=postgres password=1234567890 dbname=loyalty sslmode=disable", "Database")
 	// flag.StringVar(&config.Database, "d", "", "Database")
 	flag.StringVar(&config.SecretKey, "s", "secretkey", "Key for JWT")
-	flag.StringVar(&config.AccrualSystemAddress, "r", "localhost:8080", "Accrual System Address")
+	flag.StringVar(&config.AccrualSystemAddress, "r", "http://localhost:8080", "Accrual System Address")
 
 	flag.Parse()
 

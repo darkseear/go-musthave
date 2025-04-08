@@ -33,6 +33,7 @@ func NewOrder(accrualClient *accrual.Client, store repository.LoyaltyRepository)
 			orders: make(chan string, 100),
 			done:   make(chan struct{}),
 		},
+		store: store,
 	}
 }
 
