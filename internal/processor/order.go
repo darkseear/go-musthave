@@ -88,7 +88,7 @@ func (o *Order) ProcessOrders(ctx context.Context) {
 				continue
 			}
 			for orderNumber, lastCheck := range await {
-				if time.Since(lastCheck) < 5*time.Second {
+				if time.Since(lastCheck) < 20*time.Second {
 					continue
 				}
 				if err := o.OrderCheck(ctx, orderNumber); err != nil {

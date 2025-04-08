@@ -28,7 +28,11 @@ func (h *OrderHandler) UploadOrder(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	userID := middleware.GetUserID(r.Header.Get("Authorization"), h.cfg.SecretKey)
+	userID, err := middleware.GetUserID(r.Header.Get("Authorization"), h.cfg.SecretKey)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -56,7 +60,11 @@ func (h *OrderHandler) GetOrders(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	userID := middleware.GetUserID(r.Header.Get("Authorization"), h.cfg.SecretKey)
+	userID, err := middleware.GetUserID(r.Header.Get("Authorization"), h.cfg.SecretKey)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	orders, err := h.orderServices.UserGetOrder(r.Context(), userID)
 	if err != nil {
@@ -64,11 +72,11 @@ func (h *OrderHandler) GetOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(orders) == 0 {
-		w.WriteHeader(http.StatusNoContent)
+		http.Error(w, "No content", http.StatusNoContent)
+		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(orders); err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 	}
-	// w.WriteHeader(http.StatusOK)
 }

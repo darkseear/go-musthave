@@ -30,11 +30,11 @@ func AuthMiddleware(a *service.Auth) func(http.Handler) http.Handler {
 	}
 }
 
-func GetUserID(token string, secret string) int {
+func GetUserID(token string, secret string) (int, error) {
 	a := service.NewAuth(secret)
 	userID, err := a.ValidateToken(token)
 	if err != nil {
-		return 0
+		return 0, err
 	}
-	return userID
+	return userID, nil
 }

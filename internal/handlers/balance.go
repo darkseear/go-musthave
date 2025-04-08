@@ -25,7 +25,11 @@ func (b *BalanceHandler) UserGetBalance(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	userID := middleware.GetUserID(r.Header.Get("Authorization"), b.cfg.SecretKey)
+	userID, err := middleware.GetUserID(r.Header.Get("Authorization"), b.cfg.SecretKey)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	balance, err := b.balanceService.UserGetBalance(r.Context(), userID)
 	if err != nil {
@@ -46,7 +50,11 @@ func (b *BalanceHandler) UserWithdrawBalance(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	userID := middleware.GetUserID(r.Header.Get("Authorization"), b.cfg.SecretKey)
+	userID, err := middleware.GetUserID(r.Header.Get("Authorization"), b.cfg.SecretKey)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	var req models.ReqWithdraw
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -54,7 +62,7 @@ func (b *BalanceHandler) UserWithdrawBalance(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err := b.balanceService.UserWithdrawn(r.Context(), userID, req.Order, req.Sum)
+	err = b.balanceService.UserWithdrawn(r.Context(), userID, req.Order, req.Sum)
 	if err != nil {
 		if err.Error() == "negative amount" {
 			http.Error(w, "Negative amount", http.StatusPaymentRequired)
@@ -75,7 +83,11 @@ func (b *BalanceHandler) UserGetWithdrawals(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	userID := middleware.GetUserID(r.Header.Get("Authorization"), b.cfg.SecretKey)
+	userID, err := middleware.GetUserID(r.Header.Get("Authorization"), b.cfg.SecretKey)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	withdrawals, err := b.balanceService.UserGetWithdrawals(r.Context(), userID)
 	if err != nil {
