@@ -56,6 +56,14 @@ func (b *BalanceHandler) UserWithdrawBalance(w http.ResponseWriter, r *http.Requ
 
 	err := b.balanceService.UserWithdrawn(r.Context(), userID, req.Order, req.Sum)
 	if err != nil {
+		if err.Error() == "negative amount" {
+			http.Error(w, "Negative amount", http.StatusPaymentRequired)
+			return
+		}
+		if err.Error() == "insufficient funds" {
+			http.Error(w, "insufficient funds", http.StatusBadRequest)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -75,8 +83,13 @@ func (b *BalanceHandler) UserGetWithdrawals(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if len(withdrawals) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	if err := json.NewEncoder(w).Encode(withdrawals); err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 		return
 	}
+
 }

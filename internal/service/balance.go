@@ -17,12 +17,8 @@ func NewBalance(store repository.LoyaltyRepository) *Balance {
 	return &Balance{store: store}
 }
 
-func (b *Balance) UserGetBalance(ctx context.Context, userID int) (float64, error) {
-	balance, err := b.store.GetBalance(ctx, userID)
-	if err != nil {
-		return 0, err
-	}
-	return balance.Current, nil
+func (b *Balance) UserGetBalance(ctx context.Context, userID int) (*models.Balance, error) {
+	return b.store.GetBalance(ctx, userID)
 }
 
 func (b *Balance) UserGetWithdrawals(ctx context.Context, userID int) ([]models.Withdrawal, error) {
