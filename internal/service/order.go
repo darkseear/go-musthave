@@ -37,9 +37,5 @@ func (o *Order) UserUploadsOrder(ctx context.Context, order models.Order) error 
 }
 
 func (o *Order) UserGetOrder(ctx context.Context, userID int) ([]models.Order, error) {
-	orders, err := o.store.GetOrders(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-	return orders, nil
+	return o.store.GetOrders(ctx, userID)
 }
