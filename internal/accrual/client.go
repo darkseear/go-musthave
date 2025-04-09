@@ -39,22 +39,33 @@ func (c *Client) GetAccrual(orderNumber string) (*models.Accrual, error) {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	defer req.Body.Close()
+
+	// Чтение тела ответа
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	if req.StatusCode == http.StatusOK {
+	// Обработка статусов HTTP
+	switch req.StatusCode {
+	case http.StatusOK:
 		var accrual models.Accrual
 		if err := json.Unmarshal(body, &accrual); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 		}
 		return &accrual, nil
-	} else if req.StatusCode == http.StatusNoContent {
+	case http.StatusNoContent:
 		return nil, nil
-	} else if req.StatusCode == http.StatusNotFound {
+	case http.StatusNotFound:
 		return nil, fmt.Errorf("system url config: %s returned 404", url)
-	} else {
-		return nil, fmt.Errorf("failed to get accrual: %s", string(body))
+	case http.StatusTooManyRequests:
+		retryAfter := req.Header.Get("Retry-After")
+		duration, parseErr := time.ParseDuration(retryAfter + "s")
+		if parseErr != nil {
+			duration = 0 // Если заголовок отсутствует или некорректен
+		}
+		return nil, &RateLimitError{RetryAfter: duration}
+	default:
+		return nil, fmt.Errorf("unexpected status code %d: %s", req.StatusCode, string(body))
 	}
 }
