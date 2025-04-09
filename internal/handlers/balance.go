@@ -68,6 +68,10 @@ func (b *BalanceHandler) UserWithdrawBalance(w http.ResponseWriter, r *http.Requ
 			http.Error(w, "Negative amount", http.StatusPaymentRequired)
 			return
 		}
+		if err.Error() == "insufficient balance" {
+			http.Error(w, "insufficient balance", http.StatusPaymentRequired)
+			return
+		}
 		if err.Error() == "insufficient funds" {
 			http.Error(w, "insufficient funds", http.StatusBadRequest)
 			return
