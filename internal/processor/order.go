@@ -3,7 +3,6 @@ package processor
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/darkseear/go-musthave/internal/accrual"
@@ -14,9 +13,7 @@ import (
 )
 
 type Order struct {
-	processingMap map[string]struct{}
-	mapMutex      sync.RWMutex
-	ordersChan    Chan
+	ordersChan    *Chan
 	accrualClient *accrual.Client
 	store         repository.LoyaltyRepository
 }
@@ -29,7 +26,7 @@ type Chan struct {
 func NewOrder(accrualClient *accrual.Client, store repository.LoyaltyRepository) *Order {
 	return &Order{
 		accrualClient: accrualClient,
-		ordersChan: Chan{
+		ordersChan: &Chan{
 			orders: make(chan string, 100),
 			done:   make(chan struct{}),
 		},
@@ -71,7 +68,7 @@ func (o *Order) OrderCheck(ctx context.Context, orderNumber string) error {
 }
 
 func (o *Order) ProcessOrders(ctx context.Context) {
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(20 * time.Second)
 	defer ticker.Stop()
 
 	await := make(map[string]time.Time)

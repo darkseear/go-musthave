@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	// "github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 
 	"github.com/darkseear/go-musthave/internal/accrual"
@@ -50,12 +49,12 @@ func run() error {
 	auth := service.NewAuth(config.SecretKey)
 	ctx := context.Background()
 	store := repository.NewLoyalty(db, ctx)
-	r := handlers.Routers(config, store, auth)
-
-	//acсrual
 	accrualClient := accrual.NewClient(config.AccrualSystemAddress)
+
 	orderProcessor := processor.NewOrder(accrualClient, store)
 	go orderProcessor.Start(ctx)
+
+	r := handlers.Routers(config, store, auth, orderProcessor)
 
 	logger.Log.Info("Running server", zap.String("address", config.Address))
 	return http.ListenAndServe(config.Address, r.Router)

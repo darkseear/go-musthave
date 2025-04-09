@@ -18,8 +18,8 @@ type Order struct {
 	orderProcessor *processor.Order
 }
 
-func NewOrder(store repository.LoyaltyRepository) *Order {
-	return &Order{store: store, orderProcessor: processor.NewOrder(nil, store)}
+func NewOrder(store repository.LoyaltyRepository, orderProcessor *processor.Order) *Order {
+	return &Order{store: store, orderProcessor: orderProcessor}
 }
 
 func (o *Order) UserUploadsOrder(ctx context.Context, order models.Order) error {
