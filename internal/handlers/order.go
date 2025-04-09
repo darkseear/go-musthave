@@ -61,11 +61,11 @@ func (h *OrderHandler) GetOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	userID, err := middleware.GetUserID(r.Header.Get("Authorization"), h.cfg.SecretKey)
+	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-
 	orders, err := h.orderServices.UserGetOrder(r.Context(), userID)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -75,7 +75,7 @@ func (h *OrderHandler) GetOrders(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "No content", http.StatusNoContent)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
+
 	if err := json.NewEncoder(w).Encode(orders); err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 	}
