@@ -68,7 +68,7 @@ func (o *Order) OrderCheck(ctx context.Context, orderNumber string) error {
 }
 
 func (o *Order) ProcessOrders(ctx context.Context) {
-	ticker := time.NewTicker(20 * time.Second)
+	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
 	await := make(map[string]time.Time)
@@ -102,8 +102,10 @@ func (o *Order) ProcessOrders(ctx context.Context) {
 					continue
 				}
 				if order.Status == models.Processed || order.Status == models.Invalid {
+					fmt.Println(order.Status)
 					delete(await, orderNumber)
 				} else {
+					fmt.Println(order.Status)
 					await[orderNumber] = time.Now()
 				}
 			}
