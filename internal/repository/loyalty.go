@@ -153,7 +153,7 @@ func (l *Loyalty) UpdateOrderStatus(ctx context.Context, orderNumber string, sta
 	if accrual > 0 {
 		accrualValue = accrual
 	} else {
-		accrualValue = nil
+		accrualValue = 0
 	}
 	resStatus, err := l.db.ExecContext(ctx, query, status, accrualValue, orderNumber)
 	if err != nil {
