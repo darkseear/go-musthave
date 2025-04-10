@@ -77,9 +77,9 @@ func (l *Loyalty) UploadOrder(ctx context.Context, order models.Order) error {
 	}
 	if err != sql.ErrNoRows {
 		if isOrderExists.Valid && isOrderExists.Int64 == int64(order.UserID) {
-			return errors.New("order already exists")
+			return errors.New("order already exists ")
 		}
-		return errors.New("order does not exist")
+		return errors.New("order does not exist to another user")
 	}
 
 	query = `INSERT INTO orders (number, user_id, status) VALUES ($1, $2, $3)`

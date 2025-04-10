@@ -47,8 +47,20 @@ func (h *OrderHandler) UploadOrder(w http.ResponseWriter, r *http.Request) {
 
 	err = h.orderServices.UserUploadsOrder(r.Context(), models.Order{Number: orderNumber, UserID: userID, Status: models.Registered})
 	if err != nil {
-		logger.Log.Error("error upload")
-		w.WriteHeader(http.StatusUnprocessableEntity)
+		if err.Error() == "order already exists" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		if err.Error() == "order does not exist to another user" {
+			w.WriteHeader(http.StatusConflict)
+			return
+		}
+		if err.Error() == "invalid order" {
+			logger.Log.Error("error upload")
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusAccepted)
