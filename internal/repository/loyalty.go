@@ -149,12 +149,7 @@ func (l *Loyalty) UpdateOrderStatus(ctx context.Context, orderNumber string, sta
 	SET status = $1, accrual = $2 
 	WHERE number = $3`
 
-	var accrualValue interface{}
-	if accrual > 0 {
-		accrualValue = accrual
-	} else {
-		accrualValue = 0
-	}
+	accrualValue := max(accrual, 0)
 	resStatus, err := l.db.ExecContext(ctx, query, status, accrualValue, orderNumber)
 	if err != nil {
 		logger.Log.Error("Failed to update order status", zap.Error(err))
@@ -191,7 +186,11 @@ func (l *Loyalty) GetBalance(ctx context.Context, userID int) (*models.Balance, 
 	return balance, nil
 }
 
-func (l *Loyalty) UpdateBalance(ctx context.Context, userID int, delta float64) error {
+func (l *Loyalty) UpdateBalance(ctx context.Context, userID int, accrual float64) error {
+	if ctx.Err() != nil {
+		logger.Log.Error("Context canceled before starting transaction", zap.Error(ctx.Err()))
+		return ctx.Err()
+	}
 	tx, err := l.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -205,22 +204,26 @@ func (l *Loyalty) UpdateBalance(ctx context.Context, userID int, delta float64) 
 		return err
 	}
 
-	if delta < 0 && currentBalance+delta < 0 {
+	if accrual < 0 && currentBalance+accrual < 0 {
 		return errors.New("insufficient balance")
 	}
 
 	query = `UPDATE users SET current_balance = current_balance + $1 WHERE id = $2`
-	_, err = l.db.ExecContext(ctx, query, delta, userID)
+	_, err = l.db.ExecContext(ctx, query, accrual, userID)
 	if err != nil {
 		logger.Log.Error("Failed to update balance", zap.Error(err))
 		return err
 	}
 
-	logger.Log.Info("Balance updated successfully", zap.Int("userID", userID), zap.Float64("delta", delta))
+	logger.Log.Info("Balance updated successfully", zap.Int("userID", userID), zap.Float64("delta", accrual))
 	return tx.Commit()
 }
 
 func (l *Loyalty) CreateWithdrawal(ctx context.Context, userID int, orderNumber string, sum float64) error {
+	if ctx.Err() != nil {
+		logger.Log.Error("Context canceled before starting transaction", zap.Error(ctx.Err()))
+		return ctx.Err()
+	}
 	tx, err := l.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -237,15 +240,26 @@ func (l *Loyalty) CreateWithdrawal(ctx context.Context, userID int, orderNumber 
 		return errors.New("insufficient balance")
 	}
 
-	query = `INSERT INTO withdrawals (user_id, order_number, sum) VALUES ($1, $2, $3)`
-	_, err = l.db.ExecContext(ctx, query, userID, orderNumber, sum)
+	query = `INSERT INTO withdrawals ( order_number, user_id, sum) VALUES ($1, $2, $3)`
+	_, err = tx.ExecContext(ctx, query, orderNumber, userID, sum)
 	if err != nil {
 		logger.Log.Error("Failed to create withdrawal", zap.Error(err))
-		return err
+		return errors.New("failed to create withdrawal")
 	}
 	logger.Log.Info("Withdrawal created successfully", zap.Int("userID", userID), zap.String("orderNumber", orderNumber), zap.Float64("sum", sum))
-	_, err = tx.ExecContext(ctx, `UPDATE user SET current_balance = current_balance - $1 WHERE user_id = $2`, sum, userID)
+	_, err = tx.ExecContext(ctx, `UPDATE users SET current_balance = current_balance - $1 WHERE id = $2`, sum, userID)
 	if err != nil {
+		logger.Log.Error("Failed to update user current_balance", zap.Error(err))
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `UPDATE users SET withdrawn_balance = withdrawn_balance + $1 WHERE id = $2`, sum, userID)
+	if err != nil {
+		logger.Log.Error("Failed to update user withdrawn_balance", zap.Error(err))
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		logger.Log.Error("Failed to commit transaction", zap.Error(err))
 		return err
 	}
 
@@ -267,7 +281,7 @@ func (l *Loyalty) GetWithdrawals(ctx context.Context, userID int) ([]models.With
 	var withdrawals []models.Withdrawal
 	for rows.Next() {
 		withdrawal := models.Withdrawal{}
-		err := rows.Scan(&withdrawal.UserID, &withdrawal.OrderNumber, &withdrawal.Sum, &withdrawal.ProcessedAt)
+		err := rows.Scan(&withdrawal.OrderNumber, &withdrawal.UserID, &withdrawal.Sum, &withdrawal.ProcessedAt)
 		if err != nil {
 			logger.Log.Error("Failed to scan row", zap.Error(err))
 			return nil, err

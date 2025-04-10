@@ -60,29 +60,25 @@ func (b *BalanceHandler) UserWithdrawBalance(w http.ResponseWriter, r *http.Requ
 
 	var req models.ReqWithdraw
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		// http.Error(w, "Bad request", http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = b.balanceService.UserWithdrawn(r.Context(), userID, req.Order, req.Sum)
+
 	if err != nil {
+		if err.Error() == "invalid order number" {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			return
+		}
 		if err.Error() == "negative amount" {
-			// http.Error(w, "Negative amount", http.StatusPaymentRequired)
 			w.WriteHeader(http.StatusPaymentRequired)
 			return
 		}
 		if err.Error() == "insufficient balance" {
-			// http.Error(w, "insufficient balance", http.StatusPaymentRequired)
 			w.WriteHeader(http.StatusPaymentRequired)
 			return
 		}
-		if err.Error() == "insufficient funds" {
-			// http.Error(w, "insufficient funds", http.StatusBadRequest)
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		// http.Error(w, err.Error(), http.StatusInternalServerError)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

@@ -35,8 +35,14 @@ func (b *Balance) UserWithdrawn(ctx context.Context, userID int, orderNumber str
 
 	err := b.store.CreateWithdrawal(ctx, userID, orderNumber, amount)
 	if err != nil {
+		if err.Error() == "sql: transaction has already been committed or rolled back" {
+			return nil
+		}
 		if errors.Is(err, errors.New("insufficient funds")) {
 			return errors.New("insufficient funds")
+		}
+		if errors.Is(err, errors.New("failed to create withdrawal")) {
+			return errors.New("failed to create withdrawal")
 		}
 		return err
 	}
