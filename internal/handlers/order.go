@@ -69,7 +69,7 @@ func (h *OrderHandler) GetOrders(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	orders, err := h.orderServices.UserGetOrder(r.Context(), userID)
 	if err != nil {
-		http.Error(w, "Bad request", http.StatusBadRequest)
+		http.Error(w, "error", http.StatusInternalServerError)
 		return
 	}
 	if len(orders) == 0 {
@@ -80,6 +80,6 @@ func (h *OrderHandler) GetOrders(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(orders); err != nil {
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
