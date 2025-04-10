@@ -33,13 +33,15 @@ func (b *BalanceHandler) UserGetBalance(w http.ResponseWriter, r *http.Request) 
 
 	balance, err := b.balanceService.UserGetBalance(r.Context(), userID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		// http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(balance); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		// http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	// w.Write([]byte(`{"balance": ` + fmt.Sprintf("%f", balance) + `}`))
@@ -58,25 +60,30 @@ func (b *BalanceHandler) UserWithdrawBalance(w http.ResponseWriter, r *http.Requ
 
 	var req models.ReqWithdraw
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Bad request", http.StatusBadRequest)
+		// http.Error(w, "Bad request", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	err = b.balanceService.UserWithdrawn(r.Context(), userID, req.Order, req.Sum)
 	if err != nil {
 		if err.Error() == "negative amount" {
-			http.Error(w, "Negative amount", http.StatusPaymentRequired)
+			// http.Error(w, "Negative amount", http.StatusPaymentRequired)
+			w.WriteHeader(http.StatusPaymentRequired)
 			return
 		}
 		if err.Error() == "insufficient balance" {
-			http.Error(w, "insufficient balance", http.StatusPaymentRequired)
+			// http.Error(w, "insufficient balance", http.StatusPaymentRequired)
+			w.WriteHeader(http.StatusPaymentRequired)
 			return
 		}
 		if err.Error() == "insufficient funds" {
-			http.Error(w, "insufficient funds", http.StatusBadRequest)
+			// http.Error(w, "insufficient funds", http.StatusBadRequest)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		// http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -95,7 +102,8 @@ func (b *BalanceHandler) UserGetWithdrawals(w http.ResponseWriter, r *http.Reque
 
 	withdrawals, err := b.balanceService.UserGetWithdrawals(r.Context(), userID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		// http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -104,7 +112,8 @@ func (b *BalanceHandler) UserGetWithdrawals(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	if err := json.NewEncoder(w).Encode(withdrawals); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		// http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
