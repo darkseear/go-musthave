@@ -102,10 +102,8 @@ func (o *Order) ProcessOrders(ctx context.Context) {
 					continue
 				}
 				if order.Status == models.Processed || order.Status == models.Invalid {
-					fmt.Println(order.Status)
 					delete(await, orderNumber)
 				} else {
-					fmt.Println(order.Status)
 					await[orderNumber] = time.Now()
 				}
 			}
